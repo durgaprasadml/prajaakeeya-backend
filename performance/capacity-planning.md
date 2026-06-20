@@ -11,12 +11,16 @@ To safely transition the Prajaakeeya platform from early-stage traffic to servin
   * Node.js running PM2 with 2 workers per instance.
 * **Database:** 
   * RDS PostgreSQL `db.t3.medium` (Single-AZ for initial phase, transition to Multi-AZ if data loss is strictly unacceptable).
+  * Automated 7-day backups for basic Disaster Recovery.
 * **Cache & Throttling:** 
   * 1x ElastiCache Redis `cache.t3.micro`.
 * **Media & Assets:** 
   * Standard S3 Bucket with CloudFront distribution.
 * **Background Jobs:** 
   * Single instance handles `@Cron` jobs natively.
+* **Security & Observability**:
+  * PM2 Logs shipped to CloudWatch Logs.
+  * Basic WAF ruleset (Core).
 
 ---
 
@@ -37,6 +41,10 @@ To safely transition the Prajaakeeya platform from early-stage traffic to servin
   * Implement Socket.io Redis Adapter.
 * **Background Jobs:** 
   * Decouple `@Cron` logic into BullMQ/SQS. Run a dedicated Worker EC2 instance.
+* **Security & Observability**:
+  * Implement strict route-specific rate limiting (see `api-rate-limiting.md`).
+  * CloudWatch Alarms for RDS CPU and ALB 5xx errors (see `monitoring-strategy.md`).
+  * Sentry integration for exception tracking.
 
 ---
 
@@ -53,10 +61,14 @@ To safely transition the Prajaakeeya platform from early-stage traffic to servin
   * Aurora PostgreSQL Cluster `db.r6g.2xlarge`.
   * 1 Writer Instance, 2-3 Read Replica Instances.
   * AWS RDS Proxy mandatory.
+  * Cross-region Read Replica for Disaster Recovery (RPO 5 mins, RTO 15 mins).
 * **Cache & Throttling:** 
   * ElastiCache Redis Cluster `cache.m6g.large` with 3 shards.
 * **Media & Assets:** 
-  * Highly optimized S3/CloudFront with AWS WAF enabled to prevent DDOS.
+  * S3 Object Versioning and Cross-Region Replication enabled.
 * **Background Jobs:** 
   * 4x Dedicated Worker nodes consuming from highly partitioned SQS Queues.
   * Firebase Cloud Messaging integrated via batch sends to handle 10k+ push notifications per second.
+* **Security & Observability**:
+  * AWS Shield Advanced and robust WAF Rate-limiting to protect against DDoS (see `security-considerations.md`).
+  * AWS Managed Grafana visualizing CloudWatch infrastructure and application metrics.

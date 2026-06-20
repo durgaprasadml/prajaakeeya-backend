@@ -66,3 +66,8 @@ This document outlines the expected traffic patterns and calculates required sys
 1. **The API layer is CPU-bound:** Node.js is single-threaded. At 5,000 RPS, assuming a single Node.js process handles ~250 RPS efficiently without event loop lag, we need approximately **20-25 Node.js processes** (e.g., 6 EC2 `t3.xlarge` instances running 4 PM2 workers each).
 2. **The Database layer is Connection-bound:** PostgreSQL creates a new OS process per connection. Scaling to 25 Node.js processes, each with a pool of 10, yields 250 connections. At 15,000 RPS (election day), we would need 60+ Node processes -> 600+ DB connections, which heavily taxes Postgres memory. **Connection pooling is mandatory.**
 3. **The Notification/Reminder layer is Time-bound:** A cron job running locally to process 1M rows every minute will immediately crash the worker. This architecture must be refactored to an event-driven queue.
+
+## 5. Security and Rate Limiting
+To ensure these load limits are not exceeded artificially by malicious actors, strict rate limiting and WAF rules are required.
+- See [api-rate-limiting.md](./api-rate-limiting.md) for route-specific burst and sustained limits.
+- See [security-considerations.md](./security-considerations.md) for DDoS mitigation strategies and bot protection.
